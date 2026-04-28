@@ -1,69 +1,94 @@
 package mips.gui;
 
 import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.TextArea;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import mips.core.Cpu;
 import mips.core.Parser;
 
 public class MainApp extends Application {
+    private final Cpu cpu = new Cpu();
+    private final Parser parser = new Parser();
+
+    // Элементы интерфейса
+    private CodeEditor editor;
+    private RegisterTableComponent registerComponent;
+    private Button buttonRUN;
+    private Button buttonRESET;
+    private Button buttonSTEP;
 
     @Override
     public void start(Stage stage) {
-        // Создаем область для вывода текста
-        TextArea logArea = new TextArea();
-        logArea.setEditable(false); // Запрещаем редактирование
-        logArea.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 14;");
+        stage.setTitle("MIPS Simulator - Alpha");
 
-        // Инициализируем наше "ядро"
-        Cpu cpu = new Cpu();
-        Parser parser = new Parser();
+        // Редактор кода в левой части
+        TextArea rawTextArea = new TextArea();
+        rawTextArea.setPromptText("Введите код MIPS здесь... (например: li $1, 10)");
+        rawTextArea.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 14;");
+        editor = new SimpleCodeEditor(rawTextArea);
 
-        // Пишем тестовый лог
-        StringBuilder output = new StringBuilder();
-        output.append("--- Тест системы MIPS ---\n");
+        VBox leftPane = new VBox(new Label("РЕДАКТОР"), editor.getView());
+        leftPane.setPadding(new Insets(10));
+        VBox.setVgrow(editor.getView(), Priority.ALWAYS);
 
-        // Выполняем команды
-        try {
-            parser.parseAndExecute(cpu, "li $1, 10");
-            output.append("Выполнено: li $1, 10\n");
+        registerComponent = new RegisterTableComponent();
 
-            parser.parseAndExecute(cpu, "li $2, 25");
-            output.append("Выполнено: li $2, 25\n");
+        // Кнопки в нижней части
+        buttonRUN = new Button("RUN");
+        buttonSTEP = new Button("STEP");
+        buttonRESET = new Button("RESET");
 
-            parser.parseAndExecute(cpu, "add $3, $1, $2");
-            output.append("Выполнено: add $3, $1, $2\n");
+        buttonSTEP.setOnAction(e -> runStep());
+        buttonRESET.setOnAction(e -> {
+            cpu.reset();
+            registerComponent.update(cpu.getRegisters().getAll());
+        });
 
-            // Считываем результат
-            int result = cpu.getRegisters().read(3);
-            output.append("\nРезультат в регистре $3: ").append(result).append("\n");
+        HBox controls = new HBox(10, buttonRUN, buttonSTEP, buttonRESET);
+        controls.setPadding(new Insets(10));
+        controls.setStyle("-fx-background-color: #f0f0f0;");
 
-            if (result == 35) {
-                output.append("СТАТУС: ТЕСТ ПРОЙДЕН (10 + 25 = 35)");
-            } else {
-                output.append("СТАТУС: ОШИБКА ВЫЧИСЛЕНИЙ");
-            }
+        // Сборка всего в один лейаут
+        BorderPane mainLayout = new BorderPane();
+        mainLayout.setCenter(leftPane);
+        mainLayout.setRight(registerComponent.getView());
+        mainLayout.setBottom(controls);
 
-        } catch (Exception e) {
-            output.append("\nОшибка при выполнении: ").append(e.getMessage());
-        }
-
-        // Выводим накопленный текст в окно
-        logArea.setText(output.toString());
-
-        // Настройка интерфейса
-        BorderPane root = new BorderPane();
-        root.setCenter(logArea);
-
-        Scene scene = new Scene(root, 500, 400);
-        stage.setTitle("MIPS Kernel Test (Java 26)");
+        Scene scene = new Scene(mainLayout, 900, 600);
         stage.setScene(scene);
         stage.show();
     }
 
-    public static void main(String[] args) {
-        launch();
+
+    private void runStep() {
+        String[] lines = editor.getText().split("\n");
+
+        //Проверка выхода за границы кода
+        if (cpu.getPc() < lines.length) {
+            String currentLine = lines[cpu.getPc()].trim();
+
+            // Выполняем непустые строки
+            if(!currentLine.isEmpty()) {
+                editor.highLightLine(cpu.getPc());
+
+                try {
+                    parser.parseAndExecute(cpu, currentLine);
+                    registerComponent.update(cpu.getRegisters().getAll());
+                } catch (Exception e) {
+                    System.err.println("Error in string " + (cpu.getPc() + 1));
+                }
+            }
+
+            cpu.advancePc();
+        } else {
+            System.out.println("Program ended (PC is out of text)");
+            editor.clearHighLights();
+        }
     }
+
+    public static void main(String[] args) { launch(); }
 }
