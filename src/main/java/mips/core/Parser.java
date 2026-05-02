@@ -1,62 +1,98 @@
 package mips.core;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Parser {
-    private final Map<String, Instruction> instructions = new HashMap<>();
 
-    public Parser() {
-        // Команда LI (Load Immediate): li $t0, 5
-        instructions.put("li", (cpu, args) -> {
-            int reg = parseReg(args[0]);
-            int val = Integer.parseInt(args[1]);
-            cpu.getRegisters().write(reg, val);
-        });
+    // главный метод класса: парсим текст программы в лист парсенных комманд
+    public List<ParsedCommand> parseProgram(String text) {
+        List<ParsedCommand> program = new ArrayList<>();
+        String[] lines = text.split("\n");
 
-        // Команда ADD: add $t0, $t1, $t2
-        instructions.put("add", (cpu, args) -> {
-            int dest = parseReg(args[0]);
-            int s1 = cpu.getRegisters().read(parseReg(args[1]));
-            int s2 = cpu.getRegisters().read(parseReg(args[2]));
-            cpu.getRegisters().write(dest, s1 + s2);
-        });
-
-        // Команда SUB: sub $t0, $t1, $t2
-        instructions.put("sub", (cpu, args) -> {
-            int dest = parseReg(args[0]);
-            int s1 = cpu.getRegisters().read(parseReg(args[1]));
-            int s2 = cpu.getRegisters().read(parseReg(args[2]));
-            cpu.getRegisters().write(dest, s1 - s2);
-        });
-    }
-
-    public void parseAndExecute(Cpu cpu, String line) {
-        if (line.trim().isEmpty()) return;
-
-        // Чистим строку от запятых и лишних пробелов
-        String cleanLine = line.replace(",", " ").replaceAll("\\s+", " ").trim();
-        String[] parts = cleanLine.split(" ");
-        String op = parts[0].toLowerCase();
-
-        String[] args = new String[parts.length - 1];
-        System.arraycopy(parts, 1, args, 0, args.length);
-
-        if (instructions.containsKey(op)) {
-            instructions.get(op).execute(cpu, args);
+        for (String line : lines) {
+            ParsedCommand cmd = parseLine(line);
+            if (cmd != null) {
+                program.add(cmd);
+            }
         }
+        return program;
     }
 
-    // Хелпер для перевода "$t0" или "$8" в индекс 8
-    private int parseReg(String reg) {
-        reg = reg.replace("$", "").toLowerCase();
-        // Упрощенная логика: можно расширить под имена t0, s0 и т.д.
-        // Пока просто парсим числовой индекс для теста
+    private ParsedCommand parseLine(String line) {
+        // Убираем комментарии и лишние пробелы
+        String cleanLine = line.split("#")[0].trim();
+        if (cleanLine.isEmpty()) return null;
+
+
+        // Чистим от запятых и разбиваем по пробелам
+        String[] parts = cleanLine.replace(",", " ").split("\\s+");
+        String mnemonic = parts[0].toUpperCase();
+
         try {
-            return Integer.parseInt(reg);
-        } catch (NumberFormatException e) {
-            // Тут позже добавим маппинг имен (t0 = 8, s0 = 16...)
-            return 0;
+            InstructionType type = InstructionType.valueOf(mnemonic);
+
+            if (type == InstructionType.SYSCALL) {
+                return new ParsedCommand(type, new int[0], 0);
+            }
+
+            // Собираем аргументы (регистры или константы)
+            List<Integer> regs = new ArrayList<>();
+            int immediate = 0;
+
+            for (int i = 1; i < parts.length; i++) {
+                String arg = parts[i].toLowerCase();
+
+                if (arg.contains("(") && arg.contains(")")) {
+                    java.util.regex.Pattern p = java.util.regex.Pattern.compile("(-?\\d+)\\((.*)\\)");
+                    java.util.regex.Matcher m = p.matcher(arg);
+
+                    if (m.find()) {
+                        immediate = parseImmediate(m.group(1)); // Смещение (0)
+                        regs.add(parseRegister(m.group(2)));   // Регистр ($t1)
+                    }
+                    continue;
+                }
+
+                if (arg.startsWith("$")) {
+                    regs.add(parseRegister(arg));
+                } else {
+                    // Если это не регистр, значит число (константа или смещение)
+                    immediate = parseImmediate(arg);
+                }
+            }
+
+            // Переводим List в массив для ParsedCommand
+            int[] regIndices = regs.stream().mapToInt(Integer::intValue).toArray();
+            return new ParsedCommand(type, regIndices, immediate);
+
+        } catch (IllegalArgumentException e) {
+            // самый простой обработчик ошибок в симуляторе
+            // TODO сделать полноценную реализацию обработчика ошибок для приложения
+            System.err.println("Unknown instruction or error: " + mnemonic);
+            return null;
         }
+    }
+
+    private int parseRegister(String reg) {
+        int num = RegisterAliases.toNumber(reg);
+        if (num != -1) {
+            return num;
+        }
+        // Если не нашли, пробуем распарсить как $8 (числовой формат)
+        try {
+            return Integer.parseInt(reg.replace("$", ""));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Unknown register: " + reg);
+        }
+    }
+
+    private int parseImmediate(String val) {
+        if (val.startsWith("0x")) {
+            return Integer.parseInt(val.substring(2), 16);
+        }
+        return Integer.parseInt(val);
     }
 }

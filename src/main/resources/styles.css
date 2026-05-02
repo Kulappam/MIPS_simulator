@@ -1,0 +1,229 @@
+/* ==================== ROOT ==================== */
+.root-pane {
+    -fx-background-color: white;
+}
+
+/* ==================== TOP PANE ==================== */
+.top-pane {
+    -fx-background-color: #f0f0f0;
+    -fx-border-color: #ddd;
+    -fx-border-width: 0 0 1 0;
+}
+
+.menu-bar {
+    -fx-background-color: transparent;
+}
+
+.menu {
+    -fx-font-size: 12px;
+}
+
+.tool-bar {
+    -fx-background-color: transparent;
+    -fx-padding: 5 15;
+}
+
+/* ==================== BUTTONS ==================== */
+.button {
+    -fx-background-color: #e8e8e8;
+    -fx-border-color: #ccc;
+    -fx-border-radius: 4;
+    -fx-padding: 6 15;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #d0d0d0;
+}
+
+.run-button {
+    -fx-text-fill: #2e7d32;
+    -fx-font-weight: bold;
+}
+
+.stop-button {
+    -fx-text-fill: #c62828;
+    -fx-font-weight: bold;
+}
+
+.step-button {
+    -fx-text-fill: #1565c0;
+}
+
+.reset-button {
+    -fx-text-fill: #ef6c00;
+}
+
+/* ==================== TABPANE ==================== */
+.tab-pane {
+    -fx-background-color: transparent;
+}
+
+.tab-pane .tab-header-area {
+    -fx-background-color: transparent;
+    -fx-padding: 5 0 0 0;
+}
+
+.tab-pane .tab {
+    -fx-background-color: #f0f0f0;
+    -fx-padding: 6 20;
+    -fx-border-color: #ddd;
+    -fx-border-width: 1 1 0 0;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: white;
+    -fx-border-color: #ddd;
+    -fx-border-width: 1 1 0 1;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #2c3e50;
+    -fx-font-size: 12px;
+}
+
+.tab-pane .tab:selected .tab-label {
+    -fx-font-weight: bold;
+}
+
+.tab-pane .tab-content-area {
+    -fx-padding: 10;
+}
+
+.left-tab-pane .tab-content-area {
+    -fx-padding: 5;
+}
+
+.right-tab-pane .tab-content-area {
+    -fx-padding: 5;
+}
+
+/* ==================== SPLIT PANE ==================== */
+.split-pane-divider {
+    -fx-background-color: #ddd;
+    -fx-padding: 0 1;
+}
+
+/* ==================== CONSOLE ==================== */
+.console-view {
+    -fx-background-color: #f9f9f9;
+    -fx-border-color: #ddd;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 5;
+}
+
+.console-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 0 0 0 5;
+}
+
+.console-area {
+    -fx-font-family: 'Courier New', monospace;
+    -fx-font-size: 11px;
+    -fx-background-color: #f9f9f9;
+}
+
+/* ==================== DATAPATH ==================== */
+.datapath-view {
+    -fx-background-color: #fafafa;
+    -fx-padding: 15;
+}
+
+.datapath-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-text-fill: #2c3e50;
+}
+
+.datapath-status {
+    -fx-font-size: 12px;
+    -fx-text-fill: #666;
+    -fx-padding: 5;
+}
+
+.datapath-stage {
+    -fx-font-family: 'Courier New', monospace;
+    -fx-font-size: 11px;
+    -fx-padding: 8 12;
+    -fx-background-color: #f0f0f0;
+    -fx-border-color: #ddd;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.datapath-stage-active {
+    -fx-background-color: #bbdef5;
+    -fx-border-color: #1976d2;
+}
+
+/* ==================== REGISTER VIEW ==================== */
+.register-view {
+    -fx-background-color: white;
+}
+
+.register-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 5 0;
+}
+
+.register-grid {
+    -fx-hgap: 0;
+    -fx-vgap: 0;
+}
+
+.register-grid-bordered {
+    -fx-border-color: #aaa;
+    -fx-border-width: 1px;
+}
+
+.register-header {
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 6 10 6 10;
+    -fx-background-color: #e0e0e0;
+    -fx-border-color: #aaa;
+    -fx-border-width: 0 0 1 0;
+}
+
+.register-cell {
+    -fx-font-family: 'Courier New', monospace;
+    -fx-font-size: 12px;
+    -fx-padding: 5 10 5 10;
+}
+
+.register-cell-name {
+    -fx-alignment: CENTER_LEFT;
+}
+
+.register-cell-value {
+    -fx-alignment: CENTER_RIGHT;
+}
+
+.row-even {
+    -fx-background-color: #ffffff;
+}
+
+.row-odd {
+    -fx-background-color: #f2f2f2;
+}
+
+.tables-container {
+    -fx-fill-height: true;
+}
+
+/* ==================== MEMORY VIEW ==================== */
+.memory-table {
+    -fx-border-color: #ddd;
+    -fx-border-width: 1;
+}
+
+.memory-table .table-column {
+    -fx-alignment: CENTER-LEFT;
+}
+
+.memory-table .table-column.value-column {
+    -fx-alignment: CENTER-RIGHT;
+}

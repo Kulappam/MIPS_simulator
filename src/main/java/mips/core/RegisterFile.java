@@ -9,7 +9,7 @@ public class RegisterFile {
     }
 
     public void write(int index, int value) {
-        // Регистра $0 (index 0) всегда остается нулем
+        // Регистр $0 (index 0) всегда остается нулем
         if (index > 0 && index < 32) {
             registers[index] = value;
         }

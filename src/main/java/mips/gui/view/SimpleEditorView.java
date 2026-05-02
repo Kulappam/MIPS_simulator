@@ -1,4 +1,4 @@
-package mips.gui;
+package mips.gui.view;
 
 import javafx.scene.Node;
 import javafx.scene.control.TextArea;
@@ -7,10 +7,10 @@ import javafx.scene.control.TextArea;
 // максимально простая реализация интерфейса на простом TextArea
 // TODO заменить на RichCodeEditor для защиты диплома
 
-public class SimpleCodeEditor implements CodeEditor {
+public class SimpleEditorView implements EditorView {
     private final TextArea textArea;
 
-    public SimpleCodeEditor(TextArea textArea) {
+    public SimpleEditorView(TextArea textArea) {
         this.textArea = textArea;
     }
 
