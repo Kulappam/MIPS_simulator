@@ -7,276 +7,351 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+import mips.app.ErrorHandler;
 import mips.app.SimulationController;
-import mips.core.ParsedCommand;
-import mips.gui.component.ToggleButton;
+import mips.core.*;
 import mips.gui.view.*;
+import mips.exceptions.ParsingException;
 
-import javax.swing.*;
+import java.util.List;
 
 public class MainWindow {
     private final Stage stage;
-    private SimulationController controller;
+    private final SimulationController controller;
+    private final Parser parser;
+    private final Memory memory;
 
-    private EditorView editorView;
-    private RegisterView registerView;
-    private MemoryView memoryView;
-    private ConsoleView consoleView;
-    private DataPathView dataPathView;
+    private final EditorView editorView;
+    private final RegisterView registerView;
+    private final MemoryView memoryView;
+    private final ConsoleView consoleView;
+    private final DataPath dataPathView;
 
-    ToggleButton toggleButton;
-    private Label statusLabel;
-    private Slider speedSlider;
+    private final Button runButton, stepButton, stopButton, resetButton;
+    private final Slider speedSlider;
 
-    public MainWindow(Stage stage, SimulationController controller) {
+    public MainWindow(Stage stage, SimulationController controller,
+                      Parser parser, Memory memory,
+                      EditorView editorView,
+                      RegisterView registerView,
+                      MemoryView memoryView,
+                      ConsoleView consoleView,
+                      DataPath dataPathView) {
         this.stage = stage;
         this.controller = controller;
+        this.parser = parser;
+        this.memory = memory;
+        this.editorView = editorView;
+        this.registerView = registerView;
+        this.memoryView = memoryView;
+        this.consoleView = consoleView;
+        this.dataPathView = dataPathView;
+
+        this.runButton = new Button("RUN");
+        this.stepButton = new Button("STEP");
+        this.stopButton = new Button("STOP");
+        this.resetButton = new Button("RESET");
+        this.speedSlider = new Slider(0, 500, 100);
+
         initInterface();
 
         if (controller != null) {
-            controller.addStateListener(this::onSimulatorStateChanged);
+            controller.addStateListener(this::onControllerStateChanged);
         }
-    }
-
-    public void setController(SimulationController controller) {
-        this.controller = controller;
     }
 
     private void initInterface() {
         stage.setTitle("MIPS Simulator");
 
-        // ========== КОМПОНЕНТЫ ==========
-        editorView = new SimpleEditorView(new TextArea());
-        registerView = new RegisterView();
-        memoryView = new MemoryView();
-        consoleView = new ConsoleView();
-        dataPathView = new DataPathView();
+        runButton.setStyle("-fx-font-weight: bold;");
+        stepButton.setStyle("-fx-font-weight: bold;");
+        stopButton.setStyle("-fx-font-weight: bold;");
+        resetButton.setStyle("-fx-font-weight: bold;");
 
-        // ========== MENU BAR ==========
-        MenuBar menuBar = new MenuBar();
+        speedSlider.setShowTickLabels(true);
+        speedSlider.setShowTickMarks(true);
+        speedSlider.setMajorTickUnit(100);
+        speedSlider.setMinorTickCount(4);
+        speedSlider.setMaxWidth(120);
+        Label speedLabel = new Label("Delay:");
 
-        Menu fileMenu = new Menu("File");
-        MenuItem newItem = new MenuItem("New");
-        MenuItem loadItem = new MenuItem("Load...");
-        MenuItem saveItem = new MenuItem("Save...");
-        SeparatorMenuItem sep = new SeparatorMenuItem();
-        MenuItem exitItem = new MenuItem("Exit");
-        fileMenu.getItems().addAll(newItem, loadItem, saveItem, sep, exitItem);
+        ToolBar toolBar = new ToolBar(runButton, stopButton, stepButton, resetButton,
+                new Separator(), speedLabel, speedSlider);
 
-        Menu helperMenu = new Menu("Helper");
-        MenuItem aboutItem = new MenuItem("About");
-        MenuItem helpItem = new MenuItem("Help");
-        helperMenu.getItems().addAll(aboutItem, helpItem);
+        MenuBar menuBar = createMenuBar();
 
-        Menu exercisesMenu = new Menu("Exercises");
-        MenuItem ex1Item = new MenuItem("Arithmetic");
-        MenuItem ex2Item = new MenuItem("Memory");
-        MenuItem ex3Item = new MenuItem("Loops");
-        exercisesMenu.getItems().addAll(ex1Item, ex2Item, ex3Item);
-
-        menuBar.getMenus().addAll(fileMenu, helperMenu, exercisesMenu);
-
-        // ========== TOOL BAR ==========
-        toggleButton = new ToggleButton();
-        Button stepButton = new Button("■ STEP");
-        Button resetButton = new Button("↺ RESET");
-
-        stepButton.getStyleClass().add("step-button");
-        resetButton.getStyleClass().add("reset-button");
-
-        ToolBar toolBar = new ToolBar();
-        toolBar.getItems().addAll(toggleButton, stepButton, resetButton);
-
-        // ========== ВЕРХНЯЯ ПАНЕЛЬ ==========
         BorderPane topPane = new BorderPane();
         topPane.setLeft(menuBar);
         topPane.setRight(toolBar);
         topPane.getStyleClass().add("top-pane");
 
-        // ========== ЛЕВАЯ ПАНЕЛЬ (Editor + DataPath) ==========
         TabPane leftTabPane = new TabPane();
+        leftTabPane.getTabs().addAll(
+                new Tab("Editor", editorView.getView()),
+                new Tab("DataPath", dataPathView.getView())
+        );
+        leftTabPane.getTabs().forEach(tab -> tab.setClosable(false));
 
-        Tab editorTab = new Tab("Editor", editorView.getView());
-        Tab datapathTab = new Tab("DataPath", dataPathView.getView());
-
-        editorTab.setClosable(false);
-        datapathTab.setClosable(false);
-
-        leftTabPane.getTabs().addAll(editorTab, datapathTab);
-        leftTabPane.getStyleClass().add("left-tab-pane");
-
-        // ========== ПРАВАЯ ПАНЕЛЬ (Registers + Memory) ==========
         TabPane rightTabPane = new TabPane();
+        rightTabPane.getTabs().addAll(
+                new Tab("Registers", registerView.getView()),
+                new Tab("Memory", memoryView.getView())
+        );
+        rightTabPane.getTabs().forEach(tab -> tab.setClosable(false));
+        rightTabPane.setMinWidth(400);
+        rightTabPane.setMaxWidth(400);
 
-        Tab registersTab = new Tab("Registers", registerView.getView());
-        Tab memoryTab = new Tab("Memory", memoryView.getView());
-
-        registersTab.setClosable(false);
-        memoryTab.setClosable(false);
-
-        rightTabPane.getTabs().addAll(registersTab, memoryTab);
-        rightTabPane.getStyleClass().add("right-tab-pane");
-
-        // ========== ЦЕНТР (SplitPane) ==========
-        SplitPane centerSplit = new SplitPane();
-        centerSplit.getItems().addAll(leftTabPane, rightTabPane);
+        SplitPane centerSplit = new SplitPane(leftTabPane, rightTabPane);
         centerSplit.setDividerPositions(0.5);
-        centerSplit.getStyleClass().add("center-split");
 
-        // ========== НИЗ (Console) ==========
-        VBox bottomPane = new VBox();
-        bottomPane.getChildren().add(consoleView.getView());
-        bottomPane.getStyleClass().add("bottom-pane");
+        SplitPane verticalSplit = new SplitPane();
+        verticalSplit.setOrientation(javafx.geometry.Orientation.VERTICAL);
+        verticalSplit.getItems().addAll(centerSplit, consoleView.getView());
+        verticalSplit.setDividerPositions(0.7); // 70% на центр, 30% на консоль
+        verticalSplit.setStyle("-fx-background-color: transparent;");
 
-        // ========== КОРНЕВОЙ КОНТЕЙНЕР ==========
         BorderPane root = new BorderPane();
         root.setTop(topPane);
-        root.setCenter(centerSplit);
-        root.setBottom(bottomPane);
-        root.getStyleClass().add("root-pane");
+        root.setCenter(verticalSplit);
 
-        // ========== ДЕЙСТВИЯ КНОПОК ==========
-        toggleButton.setRunAction(() -> {
-            if (controller != null) controller.onRun();
-        });
-        toggleButton.setStopAction(() -> {
-            if (controller != null) controller.onStop();
-        });
+        // Действия кнопок
+        runButton.setOnAction(e -> { loadProgram(); controller.run(); });
+        stepButton.setOnAction(e -> { loadProgram(); controller.step(); });
+        stopButton.setOnAction(e -> controller.stop());
+        resetButton.setOnAction(e -> { controller.reset(); memory.reset(); consoleView.clear(); });
 
-        stepButton.setOnAction(e -> {
-            if (controller != null) controller.onStep();
-        });
-        resetButton.setOnAction(e -> {
-            if (controller != null) controller.onReset();
-        });
+        speedSlider.valueProperty().addListener((obs, old, val) ->
+                controller.setStepDelay(val.intValue()));
 
-        // Menu actions
-        newItem.setOnAction(e -> {
-            if (controller != null) controller.onReset();
-            editorView.setText("");
-            consoleView.clear();
-        });
-
-        exitItem.setOnAction(e -> stage.close());
-
-        aboutItem.setOnAction(e -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("About");
-            alert.setHeaderText("MIPS Simulator");
-            alert.setContentText("Educational MIPS Simulator\nCreated for Diploma Project");
-            alert.showAndWait();
-        });
-
-        // ========== СЦЕНА ==========
         Scene scene = new Scene(root, 1200, 800);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         stage.setScene(scene);
     }
 
-    // ==================== МЕТОДЫ ДЛЯ КОНТРОЛЛЕРА ====================
+    private MenuBar createMenuBar() {
+        MenuBar menuBar = new MenuBar();
 
-    public String getEditorText() {
-        return editorView.getText();
+        // ========== FILE MENU ==========
+        Menu fileMenu = new Menu("File");
+        MenuItem newItem = new MenuItem("New");
+        newItem.setOnAction(e -> {
+            editorView.setText("");
+            consoleView.clear();
+            memory.reset();
+            controller.reset();
+        });
+        MenuItem exitItem = new MenuItem("Exit");
+        exitItem.setOnAction(e -> stage.close());
+        fileMenu.getItems().addAll(newItem, new SeparatorMenuItem(), exitItem);
+
+        // ========== EXERCISES MENU ==========
+        Menu exercisesMenu = new Menu("Exercises");
+        MenuItem ex1 = new MenuItem("Sum 1 to 10");
+        ex1.setOnAction(e -> loadExercise(getSum1To10Code()));
+        MenuItem ex2 = new MenuItem("Array Sum");
+        ex2.setOnAction(e -> loadExercise(getArraySumCode()));
+        MenuItem ex3 = new MenuItem("Memory Store/Load");
+        ex3.setOnAction(e -> loadExercise(getMemoryStoreLoadCode()));
+        exercisesMenu.getItems().addAll(ex1, ex2, ex3);
+
+        // ========== HELP MENU ==========
+        Menu helpMenu = new Menu("Help");
+        MenuItem helpItem = new MenuItem("Help");
+        helpItem.setOnAction(e -> showHelpDialog());
+        MenuItem aboutItem = new MenuItem("About");
+        aboutItem.setOnAction(e -> showAboutDialog());
+        helpMenu.getItems().addAll(helpItem, aboutItem);
+
+        menuBar.getMenus().addAll(fileMenu, exercisesMenu, helpMenu);
+        return menuBar;
     }
 
-    public void updateRegisters(int[] values) {
-        registerView.update(values);
+    private void loadExercise(String code) {
+        editorView.setText(code);
+        consoleLog("[INFO] Exercise loaded. Press RUN or STEP to execute.");
     }
 
-    public void highlightLine(int pc) {
-        int lineIndex = (pc - 0x00400000) / 4;
-        if (lineIndex >= 0) {
-            editorView.highLightLine(lineIndex);
-        } else {
-            editorView.clearHighLights();
+    private void showHelpDialog() {
+        String content = """
+        MIPS SIMULATOR – QUICK HELP
+        
+        INSTRUCTIONS IMPLEMENTED:
+        • li Rd, imm   – Load immediate value into register
+        • add Rd, Rs, Rt – Rd = Rs + Rt
+        • sub Rd, Rs, Rt – Rd = Rs - Rt
+        • lw Rt, offset(Rs) – Load word from memory
+        • sw Rt, offset(Rs) – Store word to memory
+        • syscall – System call (only exit = 10 supported)
+        
+        DATA PATH:
+        1. FETCH   – Read instruction from IMEM using PC
+        2. DECODE  – Read registers from RegFile, sign-extend immediate
+        3. EXECUTE – ALU computes result
+        4. MEMORY  – Read/Write Data Memory
+        5. WRITEBACK – Write result back to Register File
+        
+        TIPS:
+        • Use STEP to execute one instruction at a time
+        • RUN runs the whole program (adjust speed with slider)
+        • STOP halts execution
+        • RESET clears registers and program counter
+        • Memory data starts at address 0x10010000
+        """;
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Help – MIPS Simulator");
+        alert.setHeaderText("MIPS Architecture Reference");
+        alert.setContentText(content);
+        alert.setResizable(true);
+        alert.getDialogPane().setPrefWidth(500);
+        alert.showAndWait();
+    }
+
+    private void showAboutDialog() {
+        String content = """
+        MIPS SIMULATOR
+        Version 1.0
+        
+        Educational MIPS Assembler Simulator
+        Developed as a Diploma Project
+        
+        Features:
+        • Editor with syntax highlighting
+        • Step-by-step execution
+        • Registers and memory viewer
+        • DataPath visualization
+        • Interactive exercises
+        • Console with colored output
+        
+        Built with JavaFX and RichTextFX.
+        """;
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("About");
+        alert.setHeaderText("About MIPS Simulator");
+        alert.setContentText(content);
+        alert.setResizable(true);
+        alert.getDialogPane().setPrefWidth(400);
+        alert.showAndWait();
+    }
+
+    private void loadProgram() {
+        try {
+            String text = editorView.getText();
+            List<ParsedCommand> program = parser.parseText(text);
+            memory.loadProgram(program, Memory.TEXT_START);
+            consoleLog("Loaded " + program.size() + " instructions");
+        } catch (ParsingException e) {
+            ErrorHandler.reportError(e);
         }
     }
 
-    public void updatePC(int pc) {
-        if (statusLabel != null) {
-            statusLabel.setText(String.format("PC: 0x%08X", pc));
-        }
+    private void onControllerStateChanged(SimulationController.ControllerState state) {
+        Platform.runLater(() -> {
+            boolean isRunning = (state == SimulationController.ControllerState.RUNNING);
+            runButton.setDisable(isRunning);
+            stopButton.setDisable(!isRunning);
+            stepButton.setDisable(isRunning);
+        });
     }
 
     public void consoleLog(String message) {
-        consoleView.log(message);
+        if (message.startsWith("[ERROR]")) {
+            consoleView.logError(message);
+        } else if (message.startsWith("[SYSCALL]")) {
+            consoleView.logSyscall(message);
+        } else if (message.startsWith("[INFO]")) {
+            consoleView.logInfo(message);
+        } else {
+            consoleView.logInfo(message);
+        }
     }
 
-    public void clearConsole() {
-        consoleView.clear();
+    private String getSum1To10Code() {
+        return """
+        # Exercise: Sum of numbers from 1 to 10
+        # Expected result: $t0 = 55
+        
+        li $t0, 0          # sum = 0
+        
+        # 1
+        li $t1, 1
+        add $t0, $t0, $t1
+        # 2
+        li $t1, 2
+        add $t0, $t0, $t1
+        # 3
+        li $t1, 3
+        add $t0, $t0, $t1
+        # 4
+        li $t1, 4
+        add $t0, $t0, $t1
+        # 5
+        li $t1, 5
+        add $t0, $t0, $t1
+        # 6
+        li $t1, 6
+        add $t0, $t0, $t1
+        # 7
+        li $t1, 7
+        add $t0, $t0, $t1
+        # 8
+        li $t1, 8
+        add $t0, $t0, $t1
+        # 9
+        li $t1, 9
+        add $t0, $t0, $t1
+        # 10
+        li $t1, 10
+        add $t0, $t0, $t1
+        
+        li $v0, 10
+        syscall
+        """;
+    }
+
+    private String getArraySumCode() {
+        return """
+        # Exercise: Sum of array elements
+        # Array stored at 0x10010000: [1,2,3,4,5]
+        # Expected: $t0 = 15
+        
+        li $t0, 0          # sum
+        li $t1, 0x10010000 # base address
+        
+        lw $t2, 0($t1)
+        add $t0, $t0, $t2
+        lw $t2, 4($t1)
+        add $t0, $t0, $t2
+        lw $t2, 8($t1)
+        add $t0, $t0, $t2
+        lw $t2, 12($t1)
+        add $t0, $t0, $t2
+        lw $t2, 16($t1)
+        add $t0, $t0, $t2
+        
+        li $v0, 10
+        syscall
+        """;
+    }
+
+    private String getMemoryStoreLoadCode() {
+        return """
+        # Exercise: Memory store/load
+        # Store 42 to address 0x10010000, then load back to $t0
+        # Expected: $t0 = 42
+        
+        li $t1, 42
+        li $t2, 0x10010000
+        sw $t1, 0($t2)
+        lw $t0, 0($t2)
+        
+        li $v0, 10
+        syscall
+        """;
     }
 
     public void show() {
         stage.show();
-    }
-
-    // ==================== DATAPATH МЕТОДЫ ====================
-
-    public void onFetch(int pc, ParsedCommand command) {
-        updatePC(pc);
-        dataPathView.onFetch(command);
-        if (command != null) {
-            consoleLog("FETCH: " + command.type());
-        }
-    }
-
-    public void onDecode(ParsedCommand command) {
-        dataPathView.onDecode(command);
-        if (command != null) {
-            consoleLog("DECODE: " + command.type());
-        }
-    }
-
-    public void onExecute(int aluOperand1, int aluOperand2, int aluResult, String operation) {
-        dataPathView.onExecute(aluOperand1, aluOperand2, aluResult, operation);
-        consoleLog("EXECUTE: " + operation + " " + aluOperand1 + ", " + aluOperand2 + " → " + aluResult);
-    }
-
-    public void onMemoryAccess(int address, int value, boolean isRead) {
-        dataPathView.onMemoryAccess(address, value, isRead);
-        String op = isRead ? "READ" : "WRITE";
-        consoleLog("MEMORY " + op + ": 0x" + Integer.toHexString(address) + " = " + value);
-    }
-
-    public void onWriteBack(int registerIndex, int value) {
-        dataPathView.onWriteBack(registerIndex, value);
-        consoleLog("WRITEBACK: $" + registerIndex + " = " + value);
-    }
-
-    public void updateMemoryCell(int address, int value) {
-        memoryView.updateSingleAddress(address, value);
-    }
-
-    public void refreshMemoryDump() {
-        if (memoryView != null && controller != null) {
-            memoryView.updateMemory(controller.getMemoryBytes(), 0x10010000);
-        }
-    }
-
-    public void onInstructionExecuted(ParsedCommand command) {
-        if (command != null) {
-            consoleLog("Executed: " + command.type());
-        }
-    }
-
-    public void onSimulatorStateChanged(SimulationController.SimulatorState state) {
-        Platform.runLater(() -> {
-            switch (state) {
-                case RUNNING:
-                    toggleButton.run();
-                    statusLabel.setText("Running...");
-                    break;
-                case IDLE:
-                    toggleButton.stop();
-                    statusLabel.setText("Ready");
-                    dataPathView.reset();
-                    break;
-                case HALTED:
-                    toggleButton.reset();
-                    statusLabel.setText("Program halted");
-                    dataPathView.reset();
-                    break;
-            }
-        });
     }
 }

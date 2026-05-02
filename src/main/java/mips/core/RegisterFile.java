@@ -22,6 +22,6 @@ public class RegisterFile {
     }
 
     public int[] getAll() {
-        return registers;
+        return registers.clone();
     }
 }

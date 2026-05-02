@@ -159,6 +159,11 @@
 }
 
 /* ==================== REGISTER VIEW ==================== */
+.register-cell-highlight {
+    -fx-background-color: #ffffcc !important;
+    -fx-text-fill: #000000 !important;
+}
+
 .register-view {
     -fx-background-color: white;
 }
@@ -215,15 +220,76 @@
 }
 
 /* ==================== MEMORY VIEW ==================== */
-.memory-table {
-    -fx-border-color: #ddd;
-    -fx-border-width: 1;
+.memory-view {
+    -fx-background-color: white;
 }
 
-.memory-table .table-column {
+.memory-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 5 0;
+}
+
+.memory-table {
+    -fx-border-color: #aaa;
+    -fx-border-width: 1px;
+}
+
+.memory-addr-column {
     -fx-alignment: CENTER-LEFT;
 }
 
-.memory-table .table-column.value-column {
+.memory-value-column {
     -fx-alignment: CENTER-RIGHT;
+}
+
+.memory-row-even {
+    -fx-background-color: #ffffff;
+}
+
+.memory-row-odd {
+    -fx-background-color: #f2f2f2;
+}
+
+.memory-row-highlight {
+    -fx-background-color: #ffffcc !important;
+    -fx-border-color: #ffcc00;
+    -fx-border-width: 1px;
+}
+
+/* ==================== EDITOR (CodeEditor) ==================== */
+/* Подсветка синтаксиса */
+.keyword {
+    -fx-fill: #0000ff;
+    -fx-font-weight: bold;
+}
+
+.register {
+    -fx-fill: #008000;
+}
+
+.number {
+    -fx-fill: #ff0000;
+}
+
+.comment {
+    -fx-fill: #808080;
+    -fx-font-style: italic;
+}
+
+.highlighted-line {
+    -fx-background-color: #ffffcc;
+}
+
+/* Стили для области редактора */
+.styled-text-area {
+    -fx-font-family: 'Courier New', monospace;
+    -fx-font-size: 13px;
+    -fx-background-color: white;
+}
+
+.lineno {
+    -fx-background-color: #f0f0f0;
+    -fx-text-fill: #666;
+    -fx-padding: 0 5 0 5;
 }

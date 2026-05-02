@@ -3,6 +3,7 @@ package mips.core;
 import java.util.ArrayList;
 import java.util.List;
 
+import mips.app.ErrorHandler;
 import mips.exceptions.*;
 
 /**
@@ -10,146 +11,17 @@ import mips.exceptions.*;
  * Реализует 5 стадий: Fetch → Decode → Execute → Memory → WriteBack
  */
 public class Cpu {
-    private final Memory memory;
-    private final RegisterFile registers;
-    private int pc;  // реальный адрес (не индекс!)
+    private final Memory        memory;
+    private final RegisterFile  registers;
+    private int                 pc;
 
     private final List<CpuListener> listeners = new ArrayList<>();
 
-    // Флаг остановки
-    private boolean halted = false;
-
     public Cpu(Memory memory, RegisterFile registers) {
-        this.memory = memory;
-        this.registers = registers;
-        this.pc = Memory.TEXT_START;
+        this.memory     = memory;
+        this.registers  = registers;
+        this.pc         = Memory.TEXT_START;
     }
-
-    // ========== Управление ==========
-
-    public void reset() {
-        registers.reset();
-        memory.reset();
-        pc = Memory.TEXT_START;
-        halted = false;
-        notifyRegistersChanged();
-        notifyPcChanged();
-    }
-
-    public void loadProgram(List<ParsedCommand> program) {
-        memory.loadProgram(program, Memory.TEXT_START);
-        pc = Memory.TEXT_START;
-        halted = false;
-        notifyPcChanged();
-    }
-
-    /**
-     * Выполнить одну инструкцию
-     * @return false если программа завершена (нет инструкции)
-     */
-    public boolean step() {
-        if (halted) return false;
-
-        try {
-            // ===== STAGE 1: FETCH =====
-            ParsedCommand cmd = memory.fetchInstruction(pc);
-            notifyFetch(pc, cmd);
-
-            // ===== STAGE 2: DECODE (неявный, просто уведомление) =====
-            notifyDecode(cmd);
-
-            // ===== STAGE 3-5: EXECUTE, MEMORY, WRITEBACK =====
-            executeInstruction(cmd);
-
-            // Обновляем PC (по умолчанию +4, ветвления могут изменить)
-            pc += 4;
-            notifyPcChanged();
-
-            notifyInstructionExecuted(cmd);
-            return true;
-
-        } catch (RuntimeException e) {
-            halted = true;
-            throw e;
-        }
-    }
-
-    /**
-     * Исполнение конкретной инструкции с уведомлениями для DataPath
-     */
-    private void executeInstruction(ParsedCommand cmd) {
-        InstructionType type = cmd.type();
-        int[] regs = cmd.regIndices();
-        int imm = cmd.immediate();
-
-        switch (type) {
-            case LI: // li $rd, imm
-                registers.write(regs[0], imm);
-                notifyWriteBack(regs[0], imm);
-                notifyExecute(0, imm, imm, "LI");
-                break;
-
-            case ADD: // add $rd, $rs, $rt
-                int rsAdd = registers.read(regs[1]);
-                int rtAdd = registers.read(regs[2]);
-                int resultAdd = rsAdd + rtAdd;
-                notifyExecute(rsAdd, rtAdd, resultAdd, "ADD");
-                registers.write(regs[0], resultAdd);
-                notifyWriteBack(regs[0], resultAdd);
-                break;
-
-            case SUB: // sub $rd, $rs, $rt
-                int rsSub = registers.read(regs[1]);
-                int rtSub = registers.read(regs[2]);
-                int resultSub = rsSub - rtSub;
-                notifyExecute(rsSub, rtSub, resultSub, "SUB");
-                registers.write(regs[0], resultSub);
-                notifyWriteBack(regs[0], resultSub);
-                break;
-
-            case LW: // lw $rt, offset($rs)
-                int baseLw = registers.read(regs[1]);
-                int addressLw = baseLw + imm;
-                notifyExecute(baseLw, imm, addressLw, "LW_ADDR");
-                int valueLw = memory.readWord(addressLw);
-                notifyMemoryAccess(addressLw, valueLw, true);
-                registers.write(regs[0], valueLw);
-                notifyWriteBack(regs[0], valueLw);
-                break;
-
-            case SW: // sw $rt, offset($rs)
-                int baseSw = registers.read(regs[1]);
-                int addressSw = baseSw + imm;
-                int valueSw = registers.read(regs[0]);
-                notifyExecute(baseSw, imm, addressSw, "SW_ADDR");
-                memory.writeWord(addressSw, valueSw);
-                notifyMemoryAccess(addressSw, valueSw, false);
-                break;
-
-            case SYSCALL:
-                int service = registers.read(2);  // $v0 = регистр 2
-                if (service == 10) {
-                    halted = true;
-                    notifyHalted();
-                    return;
-                }
-                throw new UnsupportedOperationException("syscall " + service + " not implemented");
-
-                // TODO: добить остальные инструкции (BEQ, BNE, J, JAL, SLT, AND, OR и тп)
-
-            default:
-                throw new InvalidInstructionException("Unknown instruction: " + type);
-        }
-
-        notifyRegistersChanged();
-    }
-
-    // ========== Геттеры для GUI (только чтение) ==========
-
-    public int getPc() { return pc; }
-    public RegisterFile getRegisters() { return registers; }
-    public Memory getMemory() { return memory; }
-    public boolean isHalted() { return halted; }
 
     // ========== Управление слушателями ==========
 
@@ -159,6 +31,104 @@ public class Cpu {
 
     public void removeListener(CpuListener listener) {
         listeners.remove(listener);
+    }
+
+    // ========== Публичные методы ==========
+
+    public void reset() {
+        registers.reset();
+        pc = Memory.TEXT_START;
+        notifyRegistersChanged();
+        notifyPcChanged();
+    }
+
+    public void step() {
+        ParsedCommand cmd = memory.fetchInstruction(pc);
+        notifyFetch(pc, cmd);
+
+        InstructionType type = cmd.type();
+        int[] regs = cmd.regIndices();
+        int imm = cmd.immediate();
+
+        notifyDecode(cmd);
+
+        switch (type) {
+            case LI:
+                registers.write(regs[0], imm);
+                notifyWriteBack(regs[0], imm);
+                notifyExecute(0, imm, imm, "LI");
+                break;
+
+            case ADD:
+                int rsAdd = registers.read(regs[1]);
+                int rtAdd = registers.read(regs[2]);
+                int resultAdd = rsAdd + rtAdd;
+                notifyExecute(rsAdd, rtAdd, resultAdd, "ADD");
+                registers.write(regs[0], resultAdd);
+                notifyWriteBack(regs[0], resultAdd);
+                break;
+
+            case SUB:
+                int rsSub = registers.read(regs[1]);
+                int rtSub = registers.read(regs[2]);
+                int resultSub = rsSub - rtSub;
+                notifyExecute(rsSub, rtSub, resultSub, "SUB");
+                registers.write(regs[0], resultSub);
+                notifyWriteBack(regs[0], resultSub);
+                break;
+
+            case LW:
+                int baseLw = registers.read(regs[1]);
+                int addressLw = baseLw + imm;
+                notifyExecute(baseLw, imm, addressLw, "LW_ADDR");
+                int valueLw = memory.readWord(addressLw);
+                notifyMemoryAccess(addressLw, valueLw, true);
+                registers.write(regs[0], valueLw);
+                notifyWriteBack(regs[0], valueLw);
+                break;
+
+            case SW:
+                int baseSw = registers.read(regs[1]);
+                int addressSw = baseSw + imm;
+                int valueSw = registers.read(regs[0]);
+                notifyExecute(baseSw, imm, addressSw, "SW_ADDR");
+                memory.writeWord(addressSw, valueSw);
+                notifyMemoryAccess(addressSw, valueSw, false);
+                break;
+
+            case SYSCALL:
+                int service = registers.read(2);
+                switch (service) {
+                    case 10:
+                        notifyHalted();
+                        ErrorHandler.reportSyscall("Program exited by syscall 10");
+                        throw new SyscallExitException("CPU: Program Exited (syscall " + service + ")");
+                    default:
+                        throw new UnsupportedOperationException("CPU: syscall " + service + " Not Implemented");
+                }
+
+            default:
+                throw new InvalidInstructionException("CPU: Unknown Instruction: " + type);
+        }
+
+        pc += 4;
+        notifyPcChanged();
+        notifyRegistersChanged();
+        notifyInstructionExecuted(cmd);
+    }
+
+    // ========== Геттеры для GUI ==========
+
+    public Memory getMemory() {
+        return memory;
+    }
+
+    public RegisterFile getRegisters() {
+        return registers;
+    }
+
+    public int getPc() {
+        return pc;
     }
 
     // ========== Уведомления ==========
@@ -213,7 +183,7 @@ public class Cpu {
     }
 
     private void notifyHalted() {
-        for (CpuListener l: listeners) {
+        for (CpuListener l : listeners) {
             l.onHalted();
         }
     }
