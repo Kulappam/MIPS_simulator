@@ -147,11 +147,9 @@ public class MainWindow {
         Menu exercisesMenu = new Menu("Exercises");
         MenuItem ex1 = new MenuItem("Sum 1 to 10");
         ex1.setOnAction(e -> loadExercise(getSum1To10Code()));
-        MenuItem ex2 = new MenuItem("Array Sum");
-        ex2.setOnAction(e -> loadExercise(getArraySumCode()));
-        MenuItem ex3 = new MenuItem("Memory Store/Load");
-        ex3.setOnAction(e -> loadExercise(getMemoryStoreLoadCode()));
-        exercisesMenu.getItems().addAll(ex1, ex2, ex3);
+        MenuItem ex2 = new MenuItem("Memory Store/Load");
+        ex2.setOnAction(e -> loadExercise(getMemoryStoreLoadCode()));
+        exercisesMenu.getItems().addAll(ex1, ex2);
 
         // ========== HELP MENU ==========
         Menu helpMenu = new Menu("Help");
@@ -302,31 +300,6 @@ public class MainWindow {
         # 10
         li $t1, 10
         add $t0, $t0, $t1
-        
-        li $v0, 10
-        syscall
-        """;
-    }
-
-    private String getArraySumCode() {
-        return """
-        # Exercise: Sum of array elements
-        # Array stored at 0x10010000: [1,2,3,4,5]
-        # Expected: $t0 = 15
-        
-        li $t0, 0          # sum
-        li $t1, 0x10010000 # base address
-        
-        lw $t2, 0($t1)
-        add $t0, $t0, $t2
-        lw $t2, 4($t1)
-        add $t0, $t0, $t2
-        lw $t2, 8($t1)
-        add $t0, $t0, $t2
-        lw $t2, 12($t1)
-        add $t0, $t0, $t2
-        lw $t2, 16($t1)
-        add $t0, $t0, $t2
         
         li $v0, 10
         syscall

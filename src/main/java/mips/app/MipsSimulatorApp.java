@@ -1,7 +1,6 @@
 package mips.app;
 
 import javafx.application.Application;
-import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 import mips.core.*;
 import mips.gui.MainWindow;
@@ -18,8 +17,8 @@ public class MipsSimulatorApp extends Application {
 
         RegisterView registerView = new RegisterView();
         MemoryView memoryView = new MemoryView();
-        //DataPathView dataPathView = new DataPathView();
-        CanvasDataPathView dataPathView = new CanvasDataPathView();
+        DataPathView dataPathView = new DataPathView();
+        //CanvasDataPathView dataPathView = new CanvasDataPathView();
         ConsoleView consoleView = new ConsoleView();
         EditorView editorView = new EditorView();
 

@@ -108,7 +108,7 @@ public class Cpu {
             default:
                 throw new InvalidInstructionException("CPU: Unknown Instruction: " + type);
         }
-
+        ErrorHandler.reportInfo("Instruction " + cmd.toString() + " was executed");
         pc += 4;
         notifyPcChanged();
         notifyRegistersChanged();
@@ -118,14 +118,6 @@ public class Cpu {
 
     public Memory getMemory() {
         return memory;
-    }
-
-    public RegisterFile getRegisters() {
-        return registers;
-    }
-
-    public int getPc() {
-        return pc;
     }
 
 

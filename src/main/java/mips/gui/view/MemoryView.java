@@ -189,14 +189,12 @@ public class MemoryView implements MemoryListener {
             this.value = new SimpleObjectProperty<>(value);
         }
 
-        public int getAddress() { return addr; }
         public int getValue() { return value.get(); }
         public void setValue(int newValue) { value.set(newValue); }
         public boolean isHighlighted() { return highlighted; }
         public void setHighlighted(boolean highlighted) { this.highlighted = highlighted; }
 
         public SimpleStringProperty addressProperty() { return address; }
-        public SimpleObjectProperty<Integer> valueProperty() { return value; }
         public SimpleStringProperty hexValueProperty() {
             return new SimpleStringProperty(String.format("0x%08X", value.get()));
         }
