@@ -22,8 +22,6 @@ public class Memory {
     public static final int DATA_START = 0x10010000;
     public static final int DATA_END   = 0x7FFFFFFF;
 
-    // ========== Управление слушателями ==========
-
     public void addListener(MemoryListener listener) {
         listeners.add(listener);
     }
@@ -31,8 +29,6 @@ public class Memory {
     public void removeListener(MemoryListener listener) {
         listeners.remove(listener);
     }
-
-    // ========== Работа с инструкциями ==========
 
     public void loadProgram(List<ParsedCommand> program, int startAddress) {
         instructions.clear();
@@ -53,8 +49,6 @@ public class Memory {
         }
         return cmd;
     }
-
-    // ========== Работа с данными ==========
 
     public int readWord(int address) {
         if (address < DATA_START || address >= DATA_END) {
@@ -88,15 +82,11 @@ public class Memory {
         notifyMemoryChanged(address, value);
     }
 
-    // ========== Сброс ==========
-
     public void reset() {
         bytes.clear();
         instructions.clear();
         notifyMemoryReset();
     }
-
-    // ========== Для GUI ==========
 
     public int getInstructionCount() {
         return instructions.size();
@@ -105,8 +95,6 @@ public class Memory {
     public Map<Integer, Byte> getBytes() {
         return new HashMap<>(bytes);
     }
-
-    // ========== Уведомления ==========
 
     private void notifyMemoryChanged(int address, int value) {
         for (MemoryListener l : listeners) {

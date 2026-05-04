@@ -23,7 +23,6 @@ public class Cpu {
         this.pc         = Memory.TEXT_START;
     }
 
-    // ========== Управление слушателями ==========
 
     public void addListener(CpuListener listener) {
         listeners.add(listener);
@@ -33,7 +32,6 @@ public class Cpu {
         listeners.remove(listener);
     }
 
-    // ========== Публичные методы ==========
 
     public void reset() {
         registers.reset();
@@ -117,7 +115,6 @@ public class Cpu {
         notifyInstructionExecuted(cmd);
     }
 
-    // ========== Геттеры для GUI ==========
 
     public Memory getMemory() {
         return memory;
@@ -131,7 +128,6 @@ public class Cpu {
         return pc;
     }
 
-    // ========== Уведомления ==========
 
     private void notifyRegistersChanged() {
         int[] all = registers.getAll();

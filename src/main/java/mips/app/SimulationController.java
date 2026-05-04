@@ -63,9 +63,8 @@ public class SimulationController {
 
         // Проверяем, нужно ли сбрасывать перед запуском
         boolean needsReset = !isProgramLoaded() || programEnded || programError;
-
         if (needsReset) {
-            reset();  // полный сброс (останавливает поток, сбрасывает CPU)
+            reset();
         }
 
         if (!isProgramLoaded()) {

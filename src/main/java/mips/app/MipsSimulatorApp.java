@@ -11,13 +11,11 @@ public class MipsSimulatorApp extends Application {
 
     @Override
     public void start(Stage stage) {
-        // ========== 1. СОЗДАЁМ CORE ==========
         Memory memory = new Memory();
         RegisterFile registers = new RegisterFile();
         Cpu cpu = new Cpu(memory, registers);
         Parser parser = new Parser();
 
-        // ========== 2. СОЗДАЁМ ВЬЮШКИ ==========
         RegisterView registerView = new RegisterView();
         MemoryView memoryView = new MemoryView();
         //DataPathView dataPathView = new DataPathView();
@@ -25,15 +23,12 @@ public class MipsSimulatorApp extends Application {
         ConsoleView consoleView = new ConsoleView();
         EditorView editorView = new EditorView();
 
-        // ========== 3. ПОДПИСЫВАЕМ ВЬЮШКИ ==========
         cpu.addListener(registerView);
         cpu.addListener(dataPathView);
         cpu.getMemory().addListener(memoryView);
 
-        // ========== 4. СОЗДАЁМ КОНТРОЛЛЕР ==========
         SimulationController controller = new SimulationController(cpu);
 
-        // ========== 5. СОЗДАЁМ ОКНО ==========
         MainWindow window = new MainWindow(
                 stage,
                 controller,

@@ -3,22 +3,16 @@ package mips.core;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Маппинг имен регистров MIPS к их номерам.
- * Используется как парсером, так и GUI.
- */
 public class RegisterAliases {
 
     private static final Map<String, Integer> REGISTER_TO_NUMBER = new HashMap<>();
     private static final String[] NUMBER_TO_NAME = new String[32];
 
     static {
-        // Инициализация числовых алиасов ($0, $1, ... $31)
         for (int i = 0; i < 32; i++) {
             REGISTER_TO_NUMBER.put("$" + i, i);
         }
 
-        // Именованные регистры (MIPS convention)
         REGISTER_TO_NUMBER.put("$zero", 0);
         REGISTER_TO_NUMBER.put("$at", 1);
         REGISTER_TO_NUMBER.put("$v0", 2);
@@ -90,33 +84,15 @@ public class RegisterAliases {
         NUMBER_TO_NAME[31] = "$ra";
     }
 
-    private static void put(String name, int number) {
-        REGISTER_TO_NUMBER.put(name, number);
-    }
-
-    /**
-     * Преобразует имя регистра (например, "$t0" или "$8") в номер.
-     * @return номер регистра, или -1 если имя не найдено
-     */
     public static int toNumber(String name) {
         Integer num = REGISTER_TO_NUMBER.get(name);
         return num != null ? num : -1;
     }
 
-    /**
-     * Преобразует номер регистра в его имя (например, 8 → "$t0").
-     */
     public static String toName(int number) {
         if (number >= 0 && number < 32) {
             return NUMBER_TO_NAME[number];
         }
         return "$" + number;
-    }
-
-    /**
-     * Проверяет, является ли строка именем регистра.
-     */
-    public static boolean isRegister(String name) {
-        return REGISTER_TO_NUMBER.containsKey(name);
     }
 }

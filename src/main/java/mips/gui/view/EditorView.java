@@ -37,7 +37,6 @@ public class EditorView {
         String text = codeArea.getText();
         codeArea.clearStyle(0, text.length());
 
-        // Простейшая подсветка: инструкции MIPS
         String[] keywords = {
                 "li", "add", "sub", "lw", "sw", "beq", "bne", "j", "jal", "jr",
                 "syscall", "move", "mfhi", "mflo", "mult", "div"
@@ -50,21 +49,17 @@ public class EditorView {
                 "\\$t8", "\\$t9", "\\$k0", "\\$k1", "\\$gp", "\\$sp", "\\$fp", "\\$ra"
         };
 
-        // Подсветка ключевых слов
         for (String kw : keywords) {
             highlightPattern("\\b" + kw + "\\b", "keyword");
         }
 
-        // Подсветка регистров
         for (String reg : registers) {
             highlightPattern(reg, "register");
         }
 
-        // Подсветка чисел
         highlightPattern("\\b\\d+\\b", "number");
         highlightPattern("0x[0-9a-fA-F]+", "number");
 
-        // Подсветка комментариев
         highlightPattern("#.*$", "comment");
     }
 
@@ -97,7 +92,6 @@ public class EditorView {
 
         codeArea.setStyleClass(start, end, "highlighted-line");
 
-        // Сброс подсветки через 500ms
         new javafx.animation.Timeline(
                 new javafx.animation.KeyFrame(
                         javafx.util.Duration.millis(500),
@@ -105,7 +99,6 @@ public class EditorView {
                 )
         ).play();
 
-        // Прокрутка к строке
         codeArea.showParagraphAtTop(lineIndex);
     }
 

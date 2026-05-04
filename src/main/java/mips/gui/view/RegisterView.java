@@ -22,7 +22,6 @@ public class RegisterView implements CpuListener {
     private final Label[][] rightLabels; // [16][2] - 0 имя, 1 значение
     private final VBox rootLayout;
 
-    // Для подсветки измененных регистров
     private final ConcurrentHashMap<Integer, Timeline> highlightTimelines = new ConcurrentHashMap<>();
     private int[] lastValues = new int[32];
 
@@ -32,12 +31,10 @@ public class RegisterView implements CpuListener {
         this.leftLabels = new Label[16][2];
         this.rightLabels = new Label[16][2];
 
-        // Инициализируем последние значения нулями
         for (int i = 0; i < 32; i++) {
             lastValues[i] = 0;
         }
 
-        // Настройка сеток
         leftGrid.setVgap(0);
         leftGrid.setHgap(0);
         leftGrid.setPadding(Insets.EMPTY);
@@ -48,7 +45,6 @@ public class RegisterView implements CpuListener {
         rightGrid.setPadding(Insets.EMPTY);
         rightGrid.getStyleClass().add("register-grid");
 
-        // ========== ЗАГОЛОВКИ ==========
         Label leftNameHeader = new Label("Register");
         leftNameHeader.getStyleClass().add("register-header");
         leftNameHeader.setMaxWidth(Double.MAX_VALUE);
@@ -74,7 +70,6 @@ public class RegisterView implements CpuListener {
         rightGrid.add(rightNameHeader, 0, 0);
         rightGrid.add(rightValueHeader, 1, 0);
 
-        // ========== ЗАПОЛНЕНИЕ ==========
         for (int i = 0; i < 16; i++) {
             int row = i + 1;
             String rowClass = (i % 2 == 0) ? "row-even" : "row-odd";
@@ -95,7 +90,6 @@ public class RegisterView implements CpuListener {
             rightGrid.add(rightLabels[i][1], 1, row);
         }
 
-        // ========== ШИРИНА КОЛОНОК ==========
         ColumnConstraints nameCol = new ColumnConstraints(80, 80, 100);
         ColumnConstraints valueCol = new ColumnConstraints(90, 90, 150);
         valueCol.setHgrow(Priority.ALWAYS);
@@ -103,11 +97,9 @@ public class RegisterView implements CpuListener {
         leftGrid.getColumnConstraints().addAll(nameCol, valueCol);
         rightGrid.getColumnConstraints().addAll(nameCol, valueCol);
 
-        // ========== РАМКИ ==========
         leftGrid.getStyleClass().add("register-grid-bordered");
         rightGrid.getStyleClass().add("register-grid-bordered");
 
-        // ========== КОМПОНОВКА ==========
         HBox tablesContainer = new HBox(15, leftGrid, rightGrid);
         tablesContainer.setFillHeight(true);
         tablesContainer.getStyleClass().add("tables-container");
@@ -144,7 +136,7 @@ public class RegisterView implements CpuListener {
 
             leftLabels[i][1].setText(String.valueOf(newValue));
 
-            // Подсветка при изменении
+
             if (newValue != oldValue) {
                 highlightRegister(i, true);
             }
@@ -157,13 +149,12 @@ public class RegisterView implements CpuListener {
 
             rightLabels[i][1].setText(String.valueOf(newValue));
 
-            // Подсветка при изменении
+
             if (newValue != oldValue) {
                 highlightRegister(regNum, false);
             }
         }
 
-        // Сохраняем текущие значения для следующего сравнения
         System.arraycopy(regValues, 0, lastValues, 0, 32);
     }
 
@@ -180,10 +171,10 @@ public class RegisterView implements CpuListener {
             }
         }
 
-        // Добавляем класс подсветки
+
         valueLabel.getStyleClass().add("register-cell-highlight");
 
-        // Удаляем старый таймер если есть
+
         Timeline oldTimeline = highlightTimelines.get(regIndex);
         if (oldTimeline != null) {
             oldTimeline.stop();
@@ -200,8 +191,6 @@ public class RegisterView implements CpuListener {
         timeline.play();
         highlightTimelines.put(regIndex, timeline);
     }
-
-    // ========== Реализация CpuListener ==========
 
     @Override
     public void onRegistersChanged(int[] allRegisters) {

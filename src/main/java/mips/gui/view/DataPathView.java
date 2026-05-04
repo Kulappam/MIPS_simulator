@@ -48,8 +48,6 @@ public class DataPathView implements CpuListener, DataPath {
         return label;
     }
 
-    // ========== Реализация CpuListener ==========
-
     @Override
     public void onRegistersChanged(int[] allRegisters) {
         // не используется

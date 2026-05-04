@@ -96,7 +96,6 @@ public class CanvasDataPathView implements CpuListener, DataPath {
         drawStatic();
     }
 
-    // CpuListener
     @Override
     public void onFetch(int pc, ParsedCommand command) {
         Platform.runLater(() -> highlight("PC", ARROW_PC_IMEM));
@@ -131,7 +130,6 @@ public class CanvasDataPathView implements CpuListener, DataPath {
         });
     }
 
-    // Пустые методы
     @Override public void onRegistersChanged(int[] regs) {}
     @Override public void onPcChanged(int pc) {}
     @Override public void onInstructionExecuted(ParsedCommand cmd) {}

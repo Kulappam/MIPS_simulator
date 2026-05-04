@@ -82,7 +82,6 @@ public class MemoryView implements MemoryListener {
         table.getStyleClass().add("memory-table");
     }
 
-    // ========== MemoryListener ==========
 
     @Override
     public void onMemoryChanged(int address, int value) {
@@ -92,16 +91,12 @@ public class MemoryView implements MemoryListener {
 
             MemoryEntry entry = addressToEntry.get(wordAddr);
             if (entry != null) {
-                // Старое значение
                 int oldValue = entry.getValue();
 
-                // Обновляем значение
                 entry.setValue(value);
 
-                // Подсвечиваем строку
                 highlightRow(wordAddr);
 
-                // Прокручиваем к строке
                 scrollToAddress(wordAddr);
             } else {
                 // Если записи нет — обновляем всю таблицу
@@ -115,7 +110,6 @@ public class MemoryView implements MemoryListener {
         Platform.runLater(this::rebuildTable);
     }
 
-    // ========== Публичные методы ==========
 
     public void setDataStart(int dataStart) {
         this.dataStart = dataStart;
@@ -182,7 +176,6 @@ public class MemoryView implements MemoryListener {
         return root;
     }
 
-    // ========== Внутренний класс для строки таблицы ==========
 
     public static class MemoryEntry {
         private final SimpleStringProperty address;

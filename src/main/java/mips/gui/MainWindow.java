@@ -1,7 +1,6 @@
 package mips.gui;
 
 import javafx.application.Platform;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -240,7 +239,6 @@ public class MainWindow {
             String text = editorView.getText();
             List<ParsedCommand> program = parser.parseText(text);
             memory.loadProgram(program, Memory.TEXT_START);
-            consoleLog("Loaded " + program.size() + " instructions");
         } catch (ParsingException e) {
             ErrorHandler.reportError(e);
         }
